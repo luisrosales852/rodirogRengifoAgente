@@ -58,7 +58,7 @@ Antes de dar CUALQUIER informacion sobre polizas, el usuario DEBE estar autentic
 
 3. CONFIRMAR NOMBRE: Si el usuario confirma, continua al paso 4. Si no confirma, pidele que intente con otro nombre y vuelve al paso 2.
 
-4. PEDIR CONTRASENA: Una vez confirmado el nombre, pidele al usuario su contrasena para verificar su identidad.
+4. PEDIR CONTRASENA: Una vez confirmado el nombre, pidele al usuario su contrasena para verificar su identidad. Llama a get_cliente_password para ver si la contraseña es correcta.Si es correcta entonces significa que esta autenticado.
 
 5. VALIDAR CONTRASENA: En cuanto el usuario te de la contrasena, LLAMA INMEDIATAMENTE a get_cliente_password con el nombre confirmado. Compara la contrasena que dio el usuario con la que devolvio la herramienta.
    - Si la contrasena es CORRECTA: El usuario esta autenticado. Informale que se autentico correctamente y preguntale en que puedes ayudarlo.
