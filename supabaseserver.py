@@ -136,7 +136,7 @@ def get_cliente_password(nombre_cliente: str) -> str:
         # Use only the first matching client
         cliente = clientes_response.data[0]
         password = cliente.get("Contraseña")
-
+        print(f"Se encontro esta contraseña {password}")
         # Return password if exists, otherwise return default
         if password is not None:
             return password
