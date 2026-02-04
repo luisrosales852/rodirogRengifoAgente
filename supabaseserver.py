@@ -1,8 +1,12 @@
 import os
+import logging
 from typing import Optional
 from supabase import create_client, Client
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s - %(message)s")
 
 
 # Initialize Supabase client
@@ -50,6 +54,7 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
     - Description (descripcion)
     - Status (estado)
     """
+    logger.info(f"[TOOL CALL] get_cliente_polizas -> nombre_cliente='{nombre_cliente}'")
     try:
         supabase = get_supabase_client()
 
@@ -59,12 +64,14 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
         ).execute()
 
         if not clientes_response.data:
+            logger.info(f"[TOOL RESULT] get_cliente_polizas -> No client found for '{nombre_cliente}'")
             return f"No se encontró ningún cliente con el nombre '{nombre_cliente}'."
 
         # Use only the first matching client
         cliente = clientes_response.data[0]
         cliente_id = cliente["id"]
         cliente_nombre = cliente["nombre"]
+        logger.info(f"[TOOL RESULT] get_cliente_polizas -> Found client: {cliente_nombre} (ID: {cliente_id})")
 
         # Fetch all policies for this client with the specified columns
         polizas_response = supabase.table("polizas").select(
@@ -73,6 +80,7 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
         ).eq("id_cliente", cliente_id).execute()
 
         polizas = polizas_response.data
+        logger.info(f"[TOOL RESULT] get_cliente_polizas -> {len(polizas)} polizas found for '{cliente_nombre}'")
 
         # Format client section
         result = f"\n{'='*60}\n"
@@ -120,8 +128,10 @@ def get_cliente_password(nombre_cliente: str) -> str:
     - Check a client's password
     - Verify client credentials
 
+    Search with the name of the client exactly as it appears in the database
     Returns the client's password, or 'password' if none is set.
     """
+    logger.info(f"[TOOL CALL] get_cliente_password -> nombre_cliente='{nombre_cliente}'")
     try:
         supabase = get_supabase_client()
 
@@ -131,12 +141,13 @@ def get_cliente_password(nombre_cliente: str) -> str:
         ).execute()
 
         if not clientes_response.data:
+            logger.info(f"[TOOL RESULT] get_cliente_password -> No client found for '{nombre_cliente}'")
             return f"No se encontró ningún cliente con el nombre '{nombre_cliente}'."
 
         # Use only the first matching client
         cliente = clientes_response.data[0]
         password = cliente.get("Contraseña")
-        print(f"Se encontro esta contraseña {password}")
+        logger.info(f"[TOOL RESULT] get_cliente_password -> Client: '{cliente.get('nombre')}', Password retrieved: '{password}'")
         # Return password if exists, otherwise return default
         if password is not None:
             return password
@@ -144,6 +155,7 @@ def get_cliente_password(nombre_cliente: str) -> str:
             return "password"
 
     except Exception as e:
+        logger.error(f"[TOOL ERROR] get_cliente_password -> {str(e)}")
         return f"Error al consultar la base de datos: {str(e)}"
 
 
@@ -162,25 +174,29 @@ def list_all_clientes() -> str:
     - Help the user find the correct client name
     - Get an overview of the client database
     """
+    logger.info("[TOOL CALL] list_all_clientes")
     try:
         supabase = get_supabase_client()
 
         response = supabase.table("Clientes").select("id, nombre").execute()
 
         if not response.data:
+            logger.info("[TOOL RESULT] list_all_clientes -> No clients found")
             return "No hay clientes registrados en la base de datos."
 
         result = "LISTA DE CLIENTES:\n"
         result += "-" * 40 + "\n"
 
         for cliente in response.data:
-            result += f"  • {cliente['nombre']} (ID: {cliente['id']})\n"
+            result += f"  - {cliente['nombre']} (ID: {cliente['id']})\n"
 
         result += f"\nTotal: {len(response.data)} clientes"
 
+        logger.info(f"[TOOL RESULT] list_all_clientes -> {len(response.data)} clients returned")
         return result
 
     except Exception as e:
+        logger.error(f"[TOOL ERROR] list_all_clientes -> {str(e)}")
         return f"Error al consultar la base de datos: {str(e)}"
 
 
@@ -201,6 +217,9 @@ async def get_chat_history(phone_number: str) -> list:
 
     Returns:
         list: List of message dicts with 'role' and 'content' keys
+    
+    Search with the name of the client exactly as it appears in the database
+
     """
     try:
         client = get_supabase_client()
