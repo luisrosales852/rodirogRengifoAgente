@@ -8,7 +8,7 @@ load_dotenv()
 
 # Anthropic API Configuration
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 
 # YCloud Configuration
 YCLOUD_API_KEY = os.getenv("YCLOUD_API_KEY")

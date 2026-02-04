@@ -61,56 +61,94 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
         if not clientes_response.data:
             return f"No se encontró ningún cliente con el nombre '{nombre_cliente}'."
 
-        # Collect all matching client IDs
-        clientes = clientes_response.data
-        client_ids = [cliente["id"] for cliente in clientes]
+        # Use only the first matching client
+        cliente = clientes_response.data[0]
+        cliente_id = cliente["id"]
+        cliente_nombre = cliente["nombre"]
 
-        # Build result string with client info and their policies
-        result_parts = []
+        # Fetch all policies for this client with the specified columns
+        polizas_response = supabase.table("polizas").select(
+            "Numero_de_poliza, vigencia_inicio, vigencia_fin, tipoSeguro, "
+            "sumaAsegurada, prima_anual, primaNeta, descripcion, estado"
+        ).eq("id_cliente", cliente_id).execute()
 
-        for cliente in clientes:
-            cliente_id = cliente["id"]
-            cliente_nombre = cliente["nombre"]
+        polizas = polizas_response.data
 
-            # Fetch all policies for this client with the specified columns
-            polizas_response = supabase.table("polizas").select(
-                "Numero_de_poliza, vigencia_inicio, vigencia_fin, tipoSeguro, "
-                "sumaAsegurada, prima_anual, primaNeta, descripcion, estado"
-            ).eq("id_cliente", cliente_id).execute()
+        # Format client section
+        result = f"\n{'='*60}\n"
+        result += f"CLIENTE: {cliente_nombre} (ID: {cliente_id})\n"
+        result += f"{'='*60}\n"
 
-            polizas = polizas_response.data
+        if not polizas:
+            result += "  No tiene pólizas registradas.\n"
+        else:
+            result += f"  Total de pólizas: {len(polizas)}\n\n"
 
-            # Format client section
-            client_section = f"\n{'='*60}\n"
-            client_section += f"CLIENTE: {cliente_nombre} (ID: {cliente_id})\n"
-            client_section += f"{'='*60}\n"
+            for i, poliza in enumerate(polizas, 1):
+                result += f"  Póliza {i} \n"
+                result += f"  Número de Póliza: {poliza.get('Numero_de_poliza', 'N/A')}\n"
+                result += f"  Tipo de Seguro: {poliza.get('tipoSeguro', 'N/A')}\n"
+                result += f"  Estado: {poliza.get('estado', 'N/A')}\n"
+                result += f"  Vigencia: {poliza.get('vigencia_inicio', 'N/A')} a {poliza.get('vigencia_fin', 'N/A')}\n"
+                result += f"  Suma Asegurada: ${poliza.get('sumaAsegurada', 'N/A'):,}\n" if poliza.get('sumaAsegurada') else f"  Suma Asegurada: N/A\n"
+                result += f"  Prima Anual: ${poliza.get('prima_anual', 'N/A'):,}\n" if poliza.get('prima_anual') else f"  Prima Anual: N/A\n"
+                result += f"  Prima Neta: ${poliza.get('primaNeta', 'N/A'):,}\n" if poliza.get('primaNeta') else f"  Prima Neta: N/A\n"
+                result += f"  Descripción: {poliza.get('descripcion', 'N/A')}\n\n"
 
-            if not polizas:
-                client_section += "  No tiene pólizas registradas.\n"
-            else:
-                client_section += f"  Total de pólizas: {len(polizas)}\n\n"
+        return result
 
-                for i, poliza in enumerate(polizas, 1):
-                    client_section += f"  --- Póliza {i} ---\n"
-                    client_section += f"  Número de Póliza: {poliza.get('Numero_de_poliza', 'N/A')}\n"
-                    client_section += f"  Tipo de Seguro: {poliza.get('tipoSeguro', 'N/A')}\n"
-                    client_section += f"  Estado: {poliza.get('estado', 'N/A')}\n"
-                    client_section += f"  Vigencia: {poliza.get('vigencia_inicio', 'N/A')} a {poliza.get('vigencia_fin', 'N/A')}\n"
-                    client_section += f"  Suma Asegurada: ${poliza.get('sumaAsegurada', 'N/A'):,}\n" if poliza.get('sumaAsegurada') else f"  Suma Asegurada: N/A\n"
-                    client_section += f"  Prima Anual: ${poliza.get('prima_anual', 'N/A'):,}\n" if poliza.get('prima_anual') else f"  Prima Anual: N/A\n"
-                    client_section += f"  Prima Neta: ${poliza.get('primaNeta', 'N/A'):,}\n" if poliza.get('primaNeta') else f"  Prima Neta: N/A\n"
-                    client_section += f"  Descripción: {poliza.get('descripcion', 'N/A')}\n\n"
+    except Exception as e:
+        return f"Error al consultar la base de datos: {str(e)}"
 
-            result_parts.append(client_section)
 
-        return "".join(result_parts)
+class ClientePasswordInput(BaseModel):
+    """Input schema for checking client password."""
+    nombre_cliente: str = Field(
+        description="The name of the client (nombre) to search for in the database."
+    )
+
+
+@tool(args_schema=ClientePasswordInput)
+def get_cliente_password(nombre_cliente: str) -> str:
+    """
+    Retrieves the password for a given client from the database.
+
+    This tool searches for a client by name in the Clientes table and returns
+    their password from the Contraseña column.
+
+    Use this tool when you need to:
+    - Check a client's password
+    - Verify client credentials
+
+    Returns the client's password, or 'password' if none is set.
+    """
+    try:
+        supabase = get_supabase_client()
+
+        # Search for the client by name (case-insensitive)
+        clientes_response = supabase.table("Clientes").select("nombre, Contraseña").ilike(
+            "nombre", f"%{nombre_cliente}%"
+        ).execute()
+
+        if not clientes_response.data:
+            return f"No se encontró ningún cliente con el nombre '{nombre_cliente}'."
+
+        # Use only the first matching client
+        cliente = clientes_response.data[0]
+        password = cliente.get("Contraseña")
+
+        # Return password if exists, otherwise return default
+        if password is not None:
+            return password
+        else:
+            return "password"
 
     except Exception as e:
         return f"Error al consultar la base de datos: {str(e)}"
 
 
 # List of tools to export for use with LangChain agent
-supabase_tools = [get_cliente_polizas]
+supabase_tools = [get_cliente_polizas, get_cliente_password]
 
 
 # Optional: Function to get all clients (useful for listing)
@@ -147,15 +185,11 @@ def list_all_clientes() -> str:
 
 
 # Extended tools list including the optional list function
-supabase_tools_extended = [get_cliente_polizas, list_all_clientes]
+supabase_tools_extended = [get_cliente_polizas, get_cliente_password, list_all_clientes]
 
-
-# ============================================================================
-# Chat Memory Functions
-# ============================================================================
 
 CHAT_HISTORY_TABLE = "chat_memory"
-MAX_HISTORY_MESSAGES = 40  # 20 exchanges (human + AI)
+MAX_HISTORY_MESSAGES = 20  
 
 
 async def get_chat_history(phone_number: str) -> list:
