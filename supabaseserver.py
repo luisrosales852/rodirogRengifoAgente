@@ -74,10 +74,15 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
         logger.info(f"[TOOL RESULT] get_cliente_polizas -> Found client: {cliente_nombre} (ID: {cliente_id})")
 
         # Fetch all policies for this client with the specified columns
-        polizas_response = supabase.table("polizas").select(
-            "Numero_de_poliza, vigencia_inicio, vigencia_fin, tipoSeguro, "
-            "sumaAsegurada, prima_anual, primaNeta, descripcion, estado"
-        ).eq("id_cliente", cliente_id).execute()
+        logger.info(f"[TOOL QUERY] get_cliente_polizas -> Querying polizas for id_cliente='{cliente_id}' (type: {type(cliente_id).__name__})")
+        try:
+            polizas_response = supabase.table("polizas").select(
+                "Numero_de_poliza, vigencia_inicio, vigencia_fin, tipoSeguro, "
+                "suma_asegurada, prima_anual, primaNeta, descripcion, estado"
+            ).eq("id_cliente", cliente_id).execute()
+        except Exception as poliza_err:
+            logger.error(f"[TOOL ERROR] get_cliente_polizas -> Polizas query failed: {type(poliza_err).__name__}: {str(poliza_err)}")
+            return f"Error al consultar polizas: {str(poliza_err)}"
 
         polizas = polizas_response.data
         logger.info(f"[TOOL RESULT] get_cliente_polizas -> {len(polizas)} polizas found for '{cliente_nombre}'")
@@ -106,6 +111,7 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
         return result
 
     except Exception as e:
+        logger.error(f"[TOOL ERROR] get_cliente_polizas -> {type(e).__name__}: {str(e)}")
         return f"Error al consultar la base de datos: {str(e)}"
 
 
