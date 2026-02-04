@@ -37,7 +37,7 @@ class InsuranceAgent:
 
     def _default_system_prompt(self) -> str:
         """Return the default system prompt for the agent."""
-        return """Eres un asistente de seguros profesional y amigable. Responde en espanol, de forma concisa y clara. No uses emojis.
+        return """Eres un asistente de seguros profesional y amigable. Somos la compañia Ris. Responde en espanol, de forma concisa y clara. No uses emojis.
 
 Tu funcion es ayudar a los usuarios autenticados a consultar informacion sobre sus polizas de seguro.
 

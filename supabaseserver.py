@@ -78,7 +78,7 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
         try:
             polizas_response = supabase.table("polizas").select(
                 "Numero_de_poliza, vigencia_inicio, vigencia_fin, tipoSeguro, "
-                "suma_asegurada, prima_anual, primaNeta, descripcion, estado"
+                "suma_asegurada, prima_anual, descripcion, estado"
             ).eq("id_cliente", cliente_id).execute()
         except Exception as poliza_err:
             logger.error(f"[TOOL ERROR] get_cliente_polizas -> Polizas query failed: {type(poliza_err).__name__}: {str(poliza_err)}")
@@ -105,7 +105,6 @@ def get_cliente_polizas(nombre_cliente: str) -> str:
                 result += f"  Vigencia: {poliza.get('vigencia_inicio', 'N/A')} a {poliza.get('vigencia_fin', 'N/A')}\n"
                 result += f"  Suma Asegurada: ${poliza.get('sumaAsegurada', 'N/A'):,}\n" if poliza.get('sumaAsegurada') else f"  Suma Asegurada: N/A\n"
                 result += f"  Prima Anual: ${poliza.get('prima_anual', 'N/A'):,}\n" if poliza.get('prima_anual') else f"  Prima Anual: N/A\n"
-                result += f"  Prima Neta: ${poliza.get('primaNeta', 'N/A'):,}\n" if poliza.get('primaNeta') else f"  Prima Neta: N/A\n"
                 result += f"  Descripción: {poliza.get('descripcion', 'N/A')}\n\n"
 
         return result
